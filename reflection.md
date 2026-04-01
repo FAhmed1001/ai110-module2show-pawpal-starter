@@ -6,6 +6,7 @@
 
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
+Users should be able to add a Pet, which would be associated with an Owner. Each Pet would have Tasks assigned to it like walking, feeding, grooming, etc. Each Task would track its own completion and consistency. There will also be a Scheduler that will take a pet's task list and then sort by priority. 
 
 **b. Design changes**
 
