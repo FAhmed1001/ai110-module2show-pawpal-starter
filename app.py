@@ -97,9 +97,27 @@ if "owner" in st.session_state and st.session_state.owner.pets:
             if pet_tasks:
                 st.markdown(f"**{pet.name}'s tasks:**")
                 for i, t in enumerate(pet_tasks):
-                    checked = st.checkbox(str(t), value=t.completed, key=f"{pet.name}_{i}")
-                    if checked and not t.completed:
-                        scheduler_preview.complete_task(t)
+                    slot_str = f"{t.time_slot // 60:02d}:{t.time_slot % 60:02d}" if t.time_slot is not None else "—"
+                    recur_str = f"↺ {t.recurrence}" if t.recurrence else "—"
+                    stars = "★" * t.priority + "☆" * (5 - t.priority)
+                    col_check, col_name, col_cat, col_dur, col_slot, col_recur, col_pri = st.columns([1, 3, 2, 1, 1, 2, 2])
+                    with col_check:
+                        checked = st.checkbox("", value=t.completed, key=f"{pet.name}_{i}")
+                        if checked and not t.completed:
+                            scheduler_preview.complete_task(t)
+                            st.success(f"'{t.name}' marked complete!")
+                    with col_name:
+                        st.write(f"{'~~' if t.completed else ''}{t.name}{'~~' if t.completed else ''}")
+                    with col_cat:
+                        st.caption(t.category)
+                    with col_dur:
+                        st.caption(f"{t.duration} min")
+                    with col_slot:
+                        st.caption(slot_str)
+                    with col_recur:
+                        st.caption(recur_str)
+                    with col_pri:
+                        st.caption(stars)
 else:
     st.info("Add an owner and at least one pet to start adding tasks.")
 
@@ -123,8 +141,26 @@ if st.button("Generate Schedule"):
 
         conflicts = scheduler.detect_conflicts()
         if conflicts:
-            st.warning("**Scheduling conflicts detected:**")
+            st.error(
+                f"**{len(conflicts)} scheduling conflict{'s' if len(conflicts) > 1 else ''} detected — "
+                "two or more tasks overlap in time. Fix the start times or durations below before finalising your plan.**"
+            )
             for c in conflicts:
-                st.markdown(f"- ⚠️ {c}")
+                st.warning(f"⚠️ {c}")
 
         st.text(scheduler.explain_plan(sort_by=sort_by))
+
+        timed_tasks = [t for t in scheduler.sort_by_time() if t.time_slot is not None]
+        if timed_tasks:
+            st.markdown("**Chronological timeline**")
+            st.table([
+                {
+                    "Start": f"{t.time_slot // 60:02d}:{t.time_slot % 60:02d}",
+                    "End":   f"{(t.time_slot + t.duration) // 60:02d}:{(t.time_slot + t.duration) % 60:02d}",
+                    "Task":  t.name,
+                    "Pet":   next((p.name for p in owner.pets if t in p.get_tasks()), "—"),
+                    "Duration": f"{t.duration} min",
+                    "Priority": "★" * t.priority + "☆" * (5 - t.priority),
+                }
+                for t in timed_tasks
+            ])
