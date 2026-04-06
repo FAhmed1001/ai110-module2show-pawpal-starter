@@ -22,6 +22,18 @@ Your final app should:
 - Display the plan clearly (and ideally explain the reasoning)
 - Include tests for the most important scheduling behaviors
 
+## Smarter Scheduling
+
+The `Scheduler` class goes beyond a basic priority sort with several additional features:
+
+- **Sort modes** — `generate_plan(sort_by=)` supports `"priority"` (highest first, default) and `"duration"` (shortest first, fits more tasks into the budget).
+- **Chronological view** — `sort_by_time()` returns all tasks ordered by their assigned start time, with unscheduled tasks placed at the end.
+- **Filtering** — `filter_tasks(pet_name=, completed=)` returns a filtered task list using AND logic; either argument can be omitted to skip that filter.
+- **Recurring tasks** — tasks support `recurrence="daily"` or `recurrence="weekly"`. Calling `complete_task()` marks the task done and automatically adds a fresh copy to the pet's list with a `due_date` calculated via `timedelta` (today + 1 day or today + 7 days).
+- **Conflict detection** — `detect_conflicts()` compares all tasks that have a `time_slot` assigned and reports any overlapping intervals, labeling each conflict as `[same pet]` or `[cross-pet]`. The check is wrapped in a `try/except` so it returns a warning string rather than crashing if something unexpected occurs.
+
+The scheduler uses a **greedy algorithm** (O(n log n)) which is a deliberate tradeoff: it runs fast and produces intuitive results for small task lists, at the cost of occasionally missing an optimal combination of tasks.
+
 ## Getting started
 
 ### Setup
